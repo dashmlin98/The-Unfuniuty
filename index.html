@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Incremental Game</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#001418;
+  color:#e0ffff;
+}
+#topbar{
+  display:flex;
+  gap:10px;
+  padding:10px;
+  background:#002a33;
+}
+button,select{
+  padding:8px 12px;
+  background:#004d5c;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+button:hover,select:hover{opacity:0.85}
+#game{
+  padding:20px;
+}
+.panel{
+  display:none;
+  margin-top:15px;
+  padding:15px;
+  background:#003844;
+}
+.panel.active{display:block}
+.theme-cyan{background:#001418;color:#e0ffff}
+.theme-blue{background:#001022;color:#dfe9ff}
+.theme-green{background:#001a0d;color:#e0ffe8}
+.theme-red{background:#220000;color:#ffe0e0}
+.theme-orange{background:#241400;color:#fff0d8}
+.theme-rainbow{
+  background:linear-gradient(90deg,red,orange,yellow,green,cyan,blue,violet);
+  color:black;
+}
+.theme-hue{
+  animation:hue 6s linear infinite;
+}
+@keyframes hue{
+  from{filter:hue-rotate(0deg)}
+  to{filter:hue-rotate(360deg)}
+}
+</style>
+</head>
+<body class="theme-cyan">
+<div id="topbar">
+  <button onclick="showPanel('main')">Main</button>
+  <button onclick="showPanel('achievements')">Achievements</button>
+  <button onclick="showPanel('options')">Options</button>
+  <button onclick="showPanel('dimensions')">Dimensions</button>
+</div>
+
+<div id="game">
+  <div id="main" class="panel active">
+    <h1>Incremental Game</h1>
+    <p>Points: <span id="points">0</span></p>
+    <p>Speed Multiplier: <span id="speed">1</span>x</p>
+    <button onclick="addPoints()">Gain Points</button>
+    <button onclick="speedUp()">Speed 2x</button>
+  </div>
+
+  <div id="achievements" class="panel">
+    <h2>Achievements</h2>
+    <ul id="achList"></ul>
+  </div>
+
+  <div id="options" class="panel">
+    <h2>Options</h2>
+    <label>Theme:
+      <select onchange="setTheme(this.value)">
+        <option value="cyan">cyan</option>
+        <option value="blue">blue</option>
+        <option value="green">green</option>
+        <option value="red">red</option>
+        <option value="orange">orange</option>
+        <option value="rainbow">rainbow</option>
+        <option value="hue">hue cycle</option>
+      </select>
+    </label>
+    <br><br>
+    <button onclick="saveGame()">Save Game</button>
+    <button onclick="resetGame()">Delete All Your Progress</button>
+    <p id="optionMsg"></p>
+  </div>
+
+  <div id="dimensions" class="panel">
+    <h2>Dimensions</h2>
+    <button onclick="ptfunctionandcomma()">ptfunctionandcomma</button>
+    <button onclick="breakinf()">breakinf</button>
+    <p>Lerp Value: <span id="lerpVal">0</span></p>
+  </div>
+</div>
+
+<script>
+let points=0;
+let speed=1;
+let lerpValue=0;
+
+const achievements=[
+"You gotta start somewhere",
+"You have 100 cost points, every day",
+"what, you have 1 million points together",
+"AFWOFIOFWOEFJIJ",
+"Super Sanic (1 Vigintillion)",
+"VVRCRACIUN FERICIT",
+"CRACIUN FERICIT",
+"UNLOCKED OPTION YAYY",
+"YOU GOTTA OF 10^100 GOOGOL TIMES",
+"CENTILLION",
+"Last of break infinity (1.79e308)"
+];
+
+function showPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function addPoints(){
+  points+=speed;
+  update();
+  checkAchievements();
+}
+
+function speedUp(){
+  if(speed<1024){speed*=2;}
+  update();
+}
+
+function update(){
+  document.getElementById('points').textContent=points;
+  document.getElementById('speed').textContent=speed;
+}
+
+function checkAchievements(){
+  const ul=document.getElementById('achList');
+  ul.innerHTML="";
+  achievements.forEach(a=>{
+    const li=document.createElement('li');
+    let unlocked=false;
+    if(a.includes("start") && points>=1)unlocked=true;
+    if(a.includes("100 cost") && points>=100)unlocked=true;
+    if(a.includes("1 million") && points>=1e6)unlocked=true;
+    if(a.includes("Vigintillion") && points>=1e63)unlocked=true;
+    if(a.includes("10^100") && points>=1e100)unlocked=true;
+    if(a.includes("CENTILLION") && points>=1e303)unlocked=true;
+    if(a.includes("1.79e308") && points>=1.79e308)unlocked=true;
+    li.textContent=(unlocked?"✓ ":"✗ ")+a;
+    ul.appendChild(li);
+  });
+}
+
+function setTheme(t){
+  document.body.className="";
+  if(t==="cyan")document.body.classList.add("theme-cyan");
+  if(t==="blue")document.body.classList.add("theme-blue");
+  if(t==="green")document.body.classList.add("theme-green");
+  if(t==="red")document.body.classList.add("theme-red");
+  if(t==="orange")document.body.classList.add("theme-orange");
+  if(t==="rainbow")document.body.classList.add("theme-rainbow");
+  if(t==="hue")document.body.classList.add("theme-hue");
+}
+
+function saveGame(){
+  localStorage.setItem("incgame",JSON.stringify({points,speed}));
+  document.getElementById("optionMsg").textContent="Game saved";
+}
+
+function resetGame(){
+  localStorage.removeItem("incgame");
+  points=0;
+  speed=1;
+  update();
+  document.getElementById("optionMsg").textContent="Progress deleted";
+}
+
+function loadGame(){
+  const s=localStorage.getItem("incgame");
+  if(s){
+    const d=JSON.parse(s);
+    points=d.points;
+    speed=d.speed;
+    update();
+  }
+}
+
+function ptfunctionandcomma(){
+  let start=0,end=1_000_000_000,steps=200,i=0;
+  const int=setInterval(()=>{
+    lerpValue=start+(end-start)*(i/steps);
+    document.getElementById("lerpVal").textContent=Math.floor(lerpValue);
+    i++;
+    if(i>steps)clearInterval(int);
+  },10);
+}
+
+function breakinf(){
+  let start=1e9,end=1e308,steps=200,i=0;
+  const int=setInterval(()=>{
+    lerpValue=start*Math.pow(end/start,i/steps);
+    document.getElementById("lerpVal").textContent=lerpValue.toExponential(3);
+    i++;
+    if(i>steps)clearInterval(int);
+  },10);
+}
+
+loadGame();
+update();
+checkAchievements();
+</script>
+</body>
+</html>
